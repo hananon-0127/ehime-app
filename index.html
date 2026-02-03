@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EHIME SOUVENIR MAP</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+:root {
+  --main: #ff8c00;
+  --bg: #ffffff;
+  --text: #000000;
+}
+
+.dark {
+  --bg: #121212;
+  --text: #ffffff;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  background: var(--main);
+  color: #fff;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+}
+
+#map {
+  height: calc(100vh - 190px);
+}
+
+#controls {
+  padding: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+#controls input {
+  flex: 1;
+  padding: 6px;
+}
+
+#controls button {
+  padding: 6px 10px;
+}
+
+#filter {
+  position: fixed;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 1000;
+}
+
+#filter button {
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: none;
+  background: #fff;
+}
+
+#sheet {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 140px;
+  background: var(--bg);
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+  border-radius: 16px 16px 0 0;
+  padding: 12px;
+}
+
+.star {
+  color: gold;
+}
+</style>
+</head>
+
+<body>
+<header>🍊 EHIME SOUVENIR MAP</header>
+
+<div id="controls">
+  <input type="text" id="search" placeholder="お土産名で検索" />
+  <button onclick="getLocation()">📍</button>
+  <button onclick="toggleDark()">🌙</button>
+</div>
+
+<div id="map"></div>
+
+<div id="filter">
+  <button onclick="filterSpots('all')">すべて</button>
+  <button onclick="filterSpots('sweets')">和菓子</button>
+  <button onclick="filterSpots('food')">食品</button>
+  <button onclick="filterSpots('craft')">工芸</button>
+</div>
+
+<div id="sheet">
+  <strong id="spot-name">お土産を選択</strong>
+  <div id="spot-stars"></div>
+  <p id="spot-desc">地図のピンをタップしてください</p>
+  <small id="count"></small>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+const map = L.map("map").setView([33.8392, 132.7657], 10);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+const spots = [
+  {name:"一六タルト",desc:"一六タルト",type:"sweets",rate:5,lat:33.8416,lng:132.7653},
+  {name:"坊っちゃん団子",desc:"坊ちゃん団子",type:"sweets",rate:4,lat:33.8428,lng:132.7691},
+  {name:"じゃこ天",desc:"じゃこ天",type:"food",rate:5,lat:33.2234,lng:132.5605},
+  {name:"今治タオル",desc:"今治タオル",type:"craft",rate:4,lat:34.0661,lng:132.9977}
+];
+
+let markers = [];
+let current = spots;
+
+function showSpots(data){
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  document.getElementById("count").textContent = `表示件数：${data.length}`;
+
+  data.forEach(s=>{
+    const m = L.marker([s.lat,s.lng]).addTo(map).on("click",()=>{
+      document.getElementById("spot-name").textContent = s.name;
+      document.getElementById("spot-desc").textContent = s.desc;
+      document.getElementById("spot-stars").innerHTML = "★".repeat(s.rate);
+    });
+    markers.push(m);
+  });
+}
+
+function filterSpots(type){
+  current = type==="all"?spots:spots.filter(s=>s.type===type);
+  showSpots(current);
+}
+
+document.getElementById("search").addEventListener("input",e=>{
+  const v = e.target.value;
+  showSpots(current.filter(s=>s.name.includes(v)));
+});
+
+function getLocation(){
+  navigator.geolocation.getCurrentPosition(pos=>{
+    map.setView([pos.coords.latitude,pos.coords.longitude],13);
+  });
+}
+
+function toggleDark(){
+  document.body.classList.toggle("dark");
+}
+
+showSpots(spots);
+</script>
+</body>
+</html>
